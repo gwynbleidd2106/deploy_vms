@@ -9,6 +9,8 @@ Bundle of Ansible roles to deploy / configure VMs
 # Configure
 1. Edit ```playbook``` in either ```clone_vm_pve``` or ```clone_esxi``` roles
 2. Add / remove / replace ```roles``` and ```variables``` according your needs
+3. Copy ```roles``` to your ansible roles dir
+4. Copy ```playbooks``` to your ansible playbooks dir
 
 # Run
   - PVE example:

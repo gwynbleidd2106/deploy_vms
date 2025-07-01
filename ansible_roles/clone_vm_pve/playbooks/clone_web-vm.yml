@@ -44,6 +44,7 @@
 
   vars:
     target_name: 'web-vm'
+    ip_address: '192.168.100.4'
     lan_iface_name: 'ens18'
 
   roles:

@@ -11,5 +11,5 @@ Bundle of Ansible roles to deploy / configure VMs
 2. Add / remove / replace ```roles``` and ```variables``` according your needs
 
 # Run
-PVE example ```ansible-playbook -i ./ansible_roles/clone_vm_pve/roles/clone_vm_pve/inventory/hosts.yml ./ansible_roles/clone_vm_pve/playbooks/clone_admin-vm.yaml```
-ESXi example ```ansible-playbook -i ./ansible_roles/clone_vm_esxi/roles/clone_vm_esxi/inventory/hosts.yml ./ansible_roles/clone_vm_esxi/playbooks/clone_admin-vm.yaml```
+  - PVE example ```ansible-playbook -i ./ansible_roles/clone_vm_pve/roles/clone_vm_pve/inventory/hosts.yml ./ansible_roles/clone_vm_pve/playbooks/clone_admin-vm.yaml```
+  - ESXi example ```ansible-playbook -i ./ansible_roles/clone_vm_esxi/roles/clone_vm_esxi/inventory/hosts.yml ./ansible_roles/clone_vm_esxi/playbooks/clone_admin-vm.yaml```

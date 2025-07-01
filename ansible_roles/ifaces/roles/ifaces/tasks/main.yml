@@ -1,6 +1,6 @@
 ---
 - name: copy interfaces config file and apply
   template:
-    src: "ifaces/{{ target_name }}.j2"
+    src: "{{ target_name }}.j2"
     dest: /etc/network/interfaces
   notify: restart networking

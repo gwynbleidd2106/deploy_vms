@@ -1,0 +1,83 @@
+user www-data;
+worker_processes auto;
+pid /run/nginx.pid;
+
+# modules
+include /etc/nginx/modules-enabled/*.conf;
+
+events {
+    worker_connections 1024;
+}
+
+http {
+    # configure sites
+    include /etc/nginx/sites-enabled/*.conf;
+
+    # vts modules
+    vhost_traffic_status_zone;
+
+    # geoip2 module
+    geoip2 /usr/share/GeoIP/GeoLite2-Country.mmdb {
+        $geoip2_data_country_iso_code country iso_code;
+        $geoip2_data_continent_code   continent code;
+    }
+ 
+    # geoip2 module
+    geoip2 /usr/share/GeoIP/GeoLite2-City.mmdb {
+        $geoip2_data_city_name   city names en;
+        $geoip2_data_postal_code postal code;
+        $geoip2_data_latitude    location latitude;
+        $geoip2_data_longitude   location longitude;
+        $geoip2_data_state_name  subdivisions 0 names en;
+        $geoip2_data_state_code  subdivisions 0 iso_code;
+    }
+
+    # headers module
+    map $http_user_agent $filter_user_agent {
+        default 'Unknown';
+        ~WordPress WordPress;
+        ~(curl|Wget|python|WindowsPowerShell) Curl,Wget,Python,PowerShell;
+        ansible-httpget ansible;
+        ~*(spider|crawler|scanner|googlebot|bingbot|yandex|slurp|bot) Bots;
+        "" 'No User Agent';
+        "-" 'No User Agent';
+        blackbox_exporter 'Blackbox Exporter';
+        ~iPhone IOS;
+        ~Android Android;
+        ~(MSIE|Windows) Windows;
+        ~X11 Linux;
+        ~(Macintosh|Mac) Macintosh;
+    }
+
+    # block empty and unwanted user agents
+    map $http_user_agent $block {
+        ~WordPress "1";
+        ~ansible-httpget "1";
+        ~(curl|Wget|python|WindowsPowerShell) "1";
+        ~*(spider|crawler|scanner|googlebot|bingbot|yandex|slurp|bot) "1";
+        "" "1";
+        "-" "1";
+    }
+
+    # logs
+    access_log /var/log/nginx/access.log;
+    error_log /var/log/nginx/error.log;
+    log_format main     '$remote_addr - $remote_user [$time_local] "$request" '
+                        '$status $body_bytes_sent "$http_referer" '
+                        '"$http_user_agent" "$http_x_forwarded_for"';
+
+    # other params
+    sendfile on;
+    tcp_nopush on;
+    types_hash_max_size 2048;
+    gzip on;
+
+    # ssl
+    ssl_protocols TLSv1.2 TLSv1.3;
+    ssl_prefer_server_ciphers on;
+
+    # includes / defaults
+    include /etc/nginx/mime.types;
+    default_type application/octet-stream;
+    include /etc/nginx/conf.d/*.conf;
+}

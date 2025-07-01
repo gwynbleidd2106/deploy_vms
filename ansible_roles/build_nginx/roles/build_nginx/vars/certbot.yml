@@ -1,0 +1,4 @@
+---
+certbot_package: 'python3-certbot-dns-cloudflare'
+cloudflare_token_path: '/root/.cloudflaretoken.ini'
+certbot_email: 'PASS_AS_ENV_OR_VAR'

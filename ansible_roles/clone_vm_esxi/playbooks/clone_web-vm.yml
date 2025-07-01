@@ -1,0 +1,75 @@
+---
+- name: clone VM ESXi
+  hosts: esxi
+  become: false
+
+  vars:
+    clone_name: "debian-template"
+    target_name: "web-vm"
+    python_package: "python3"
+
+  roles:
+  - clone_vm_esxi
+
+- name: ensure python3 installed
+  hosts: cloned_vm
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: wait for cloned VM to up
+      wait_for:
+        host: "{{ ansible_host }}"
+        port: 22
+        delay: 10
+        timeout: 300
+      delegate_to: localhost
+
+    - name: check python3
+      raw: which python3
+      register: python3_check
+      ignore_errors: true
+
+    - name: install if missing
+      raw: |
+        apt update -y
+        apt install "{{ python_package }}" -y
+      when: python3_check.rc != 0
+
+- name: configure network interfaces
+  hosts: cloned_vm
+  become: true
+
+  vars:
+    target_name: 'web-vm'
+    lan_iface_name: 'ens18'
+
+  roles:
+    - ifaces
+
+- name: configure nftables firewall
+  hosts: cloned_vm
+  become: true
+
+  vars:
+    target_name: 'web-vm'
+    enable_logging: 'false'
+
+  roles:
+    - nftables
+
+- name: configure nginx
+  hosts: cloned_vm
+  become: true
+
+  vars:
+    nginx_version: 'nginx-1.28.0'
+    site_name: "test"
+    trusted_network: "192.168.100.2"
+    enroll_cert: false
+    certbot_email: 'PASS_AS_ENV_OR_VAR'
+    maxmind_account_id: 'PASS_AS_ENV_OR_VAR'
+    maxmind_license_key: 'PASS_AS_ENV_OR_VAR'
+
+  roles:
+    - build_nginx

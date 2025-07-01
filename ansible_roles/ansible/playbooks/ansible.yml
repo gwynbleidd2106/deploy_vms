@@ -1,0 +1,7 @@
+---
+- name: ansible
+  hosts: admin-vm
+  become: true
+
+  roles:
+    - ansible

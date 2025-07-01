@@ -1,0 +1,12 @@
+---
+- name: debian based variables
+  include_vars: "{{ role_path }}/vars/debian12.yml"
+  when: ansible_os_family == "Debian"
+
+- name: install postgresql packages
+  ansible.builtin.apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages }}"
+  notify: restart postgresql

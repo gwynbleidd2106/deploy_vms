@@ -1,0 +1,28 @@
+---
+- name: debian based variables
+  include_vars: "{{ role_path }}/vars/debian12.yml"
+  when: ansible_os_family == "Debian"
+
+- name: install nftables package
+  ansible.builtin.apt:
+    update_cache: true
+    name: "{{ package }}"
+    state: present
+
+- name: copy the nftables config file
+  template:
+    src: "{{ target_name }}.conf.j2"
+    dest: /etc/nftables.conf
+  notify: reload nftables
+
+- name: ensure nftables is running and enabled at boot
+  service:
+    name: nftables
+    enabled: yes
+    state: started
+
+- name: copy the nftables config file
+  template:
+    src: "{{ target_name }}.conf.j2"
+    dest: /etc/nftables.conf
+  notify: reload nftables

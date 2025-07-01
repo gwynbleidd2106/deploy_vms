@@ -1,0 +1,17 @@
+---
+nginx_version: 'nginx-1.28.0'
+nginx_bin_path: '/usr/sbin/nginx'
+nginx_modules:
+  - repo: https://github.com/vozlt/nginx-module-vts
+    dir: nginx-module-vts
+  - repo: https://github.com/openresty/headers-more-nginx-module
+    dir: headers-more-nginx-module
+  - repo: https://github.com/leev/ngx_http_geoip2_module
+    dir: ngx_http_geoip2_module
+nginx_build_packages:
+  - name: 'git'
+  - name: 'gcc'
+  - name: 'make'
+site_name: 'test'
+trusted_network: '192.168.100.2'
+dh_param_file: '/etc/ssl/dhparam2048.pem'

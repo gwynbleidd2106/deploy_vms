@@ -1,0 +1,27 @@
+---
+- name: GeoIP v2 variables
+  include_vars: "{{ role_path }}/vars/geoip2.yml"
+
+- name: nginx variables
+  include_vars: "{{ role_path }}/vars/nginx.yml"
+
+- name: debian 12 variables
+  include_vars: "{{ role_path }}/vars/debian12.yml"
+  when: ansible_distribution == "Debian" and ansible_distribution_major_version | int == 12
+
+- name: ubuntu 22 variables
+  include_vars: "{{ role_path }}/vars/ubuntu22.yml"
+  when: ansible_distribution == "Ubuntu" and ansible_distribution_major_version | int == 22
+
+- name: certbot variables
+  include_vars: "{{ role_path }}/vars/certbot.yml"
+
+- name: install MaxMind GeoIP v2
+  include_tasks: geoip2.yml
+
+- name: build / install nginx
+  include_tasks: nginx.yml
+
+- name: enroll / install certificate
+  include_tasks: certbot.yml
+  when: enroll_cert is defined and enroll_cert == true

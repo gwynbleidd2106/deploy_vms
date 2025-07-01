@@ -1,0 +1,48 @@
+---
+- name: check if nginx is compiled with required modules
+  command: nginx -V
+  register: nginx_build_params
+  changed_when: false
+  ignore_errors: true
+
+- name: determine latest Maxmind geoip2 GitHub release (local)
+  delegate_to: localhost
+  become: false
+  uri:
+    url: "{{ geoip2_url }}/{{ geoip2_version }}"
+    body_format: json
+  register: _github_release
+  until: _github_release.status == 200
+  run_once: true
+  retries: 3
+
+- name: set Maxmind geoip2_version
+  set_fact:
+    geoip2_version: "{{ _github_release.json.tag_name
+      | regex_replace('^v?([0-9\\.]+)$', '\\1') }}"
+  become: false
+
+- name: set geoip2_download_url
+  set_fact:
+    geoip2_download_url: "https://github.com/maxmind/geoipupdate/releases/download/v{{ geoip2_version }}/geoipupdate_{{ geoip2_version }}_linux_amd64.deb"
+  become: false
+
+- name: install Maxmind geoip2
+  ansible.builtin.apt:
+    deb: "{{ geoip2_download_url }}"
+
+- name: configure Maxmind geoip2
+  template:
+    src: GeoIP.conf.j2
+    dest: "{{ geoip2_conf_file }}"
+    mode: 0644
+
+- name: install Maxmind geoip2 dev package
+  apt:
+    update_cache: true
+    name: "{{ geoip2_dev_package }}"
+    state: present
+  when: nginx_configure_params not in nginx_build_params.stderr
+
+- name: update Maxmind geoip2 db
+  command: "geoipupdate -o"

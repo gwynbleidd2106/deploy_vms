@@ -1,0 +1,11 @@
+---
+- name: nftables
+  hosts: admin-vm
+  become: true
+
+  vars:
+    target_name: 'admin-vm'
+    enable_logging: 'false'
+
+  roles:
+    - nftables

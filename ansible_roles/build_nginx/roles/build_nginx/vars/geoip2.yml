@@ -1,0 +1,7 @@
+---
+geoip2_version: "latest"
+geoip2_url: https://api.github.com/repos/maxmind/geoipupdate/releases
+geoip2_download_url: "https://github.com/maxmind/geoipupdate/releases/download/v{{ geoip2_version }}/geoipupdate_{{ geoip2_version }}_linux_amd64.deb"
+geoip2_dev_package: "libmaxminddb-dev"
+geoip2_module_package: "libmaxminddb0"
+geoip2_conf_file: "/etc/GeoIP.conf"

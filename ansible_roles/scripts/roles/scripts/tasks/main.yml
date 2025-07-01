@@ -1,0 +1,30 @@
+---
+- name: debian based variables
+  include_vars: "{{ role_path }}/vars/debian12.yml"
+  when: ansible_os_family == "Debian"
+
+- name: install packages to run scripts
+  ansible.builtin.apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop: "{{ packages }}"
+
+- name: create script dir
+  ansible.builtin.file:
+    path: /crons
+    state: directory
+    mode: '0700'
+
+- name: copy scripts to cron dir
+  template:
+    src: "{{ item }}.j2"
+    dest: "/crons/{{ item }}"
+    mode: '0400'
+  loop: "{{ scripts }}"
+
+- name: cron script health check all VMs
+  ansible.builtin.cron:
+    name: "every 5 minuites - check all VMs"
+    minute: "*/5"
+    job: 'bash /crons/check_services.sh" > /dev/null 2>&1'

@@ -1,0 +1,68 @@
+---
+- name: clone VM PVE
+  hosts: pve
+  become: false
+
+  vars:
+    pve_host: "PASS_AS_ENV_OR_VAR"
+    pve_user: "PASS_AS_ENV_OR_VAR@pam"
+    pve_password: "PASS_AS_ENV_OR_VAR"
+    clone_vmid: "199"
+    clone_name: "debian-template"
+    target_vmid: "121"
+    target_name: "db-vm"
+    # vm_startup_order: "order=3,up=10,down=0"
+    # vm_startup_enabled: true
+    # vm_cores: 2
+    # vm_ram: "4096"
+    # vm_extra_disk: storage-x:1,format=raw
+    python_package: "python3"
+
+  roles:
+    - clone_vm_pve
+
+- name: ensure python3 installed
+  hosts: cloned_vm
+  become: true
+  gather_facts: false
+
+  tasks:
+    - name: check python3
+      raw: which python3
+      register: python3_check
+      ignore_errors: true
+
+    - name: install if missing
+      raw: |
+        apt update -y
+        apt install "{{ python_package }}" -y
+      when: python3_check.rc != 0
+
+- name: configure network interfaces
+  hosts: cloned_vm
+  become: true
+
+  vars:
+    target_name: 'db-vm'
+    lan_iface_name: 'ens18'
+
+  roles:
+    - ifaces
+
+- name: configure nftables firewall
+  hosts: cloned_vm
+  become: true
+
+  vars:
+    target_name: 'db-vm'
+    enable_logging: 'false'
+
+  roles:
+    - nftables
+
+- name: configure postgresql
+  hosts: cloned_vm
+  become: true
+
+  roles:
+    - postgresql

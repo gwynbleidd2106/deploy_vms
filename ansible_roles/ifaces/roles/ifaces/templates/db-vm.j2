@@ -1,0 +1,14 @@
+source /etc/network/interfaces.d/*
+
+# The loopback network interface
+auto lo
+iface lo inet loopback
+
+# lan
+allow-hotplug {{ lan_iface_name }}
+iface {{ lan_iface_name }} inet static
+        address 192.168.100.3/24
+        gateway 192.168.100.1
+        dns-nameservers 1.1.1.1 1.0.0.1 8.8.8.8 8.8.4.4 9.9.9.9 149.112.112.112
+        post-up ip route add default via 192.168.100.3/24 dev {{ lan_iface_name }}
+        post-down ip rule del from 192.168.100.3/24

@@ -1,0 +1,7 @@
+---
+- name: postgresql
+  hosts: admin-vm
+  become: true
+
+  roles:
+    - scripts

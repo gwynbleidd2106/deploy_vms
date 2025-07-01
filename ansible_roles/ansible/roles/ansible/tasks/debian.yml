@@ -1,0 +1,42 @@
+---
+- name: install ansible repo packages
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ansible_repo_packages }}"
+
+- name: import ansible repo gpg key
+  ansible.builtin.shell: |
+    wget -O- "https://keyserver.ubuntu.com/pks/lookup?fingerprint=on&op=get&search=0x6125E2A8C77F2818FB7BD15B93C4A3FD7BB9C367" | \
+    gpg --dearmour -o /usr/share/keyrings/ansible-archive-keyring.gpg
+  args:
+    creates: /usr/share/keyrings/ansible-archive-keyring.gpg
+
+- name: add Ansible PPA to source list
+  copy:
+    dest: /etc/apt/sources.list.d/ansible.list
+    content: "{{ ansible_repo }}\n"
+    mode: '0644'
+
+- name: install ansible
+  apt:
+    update_cache: true
+    name: ansible
+    state: present
+
+- name: remove ansible repo packages
+  apt:
+    autoclean: true
+    autoremove: true
+    clean: true
+    name: "{{ item }}"
+    state: absent
+  loop: "{{ ansible_repo_packages }}"
+
+- name: install packages
+  apt:
+    update_cache: true
+    name: "{{ item }}"
+    state: present
+  loop: "{{ ansible_packages }}"

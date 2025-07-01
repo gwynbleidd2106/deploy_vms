@@ -1,0 +1,10 @@
+---
+- name: postgresql
+  hosts: db-vm
+  become: true
+
+  vars:
+    postgresql_version: 'postgresql-15'
+
+  roles:
+    - postgresql

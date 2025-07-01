@@ -1,0 +1,4 @@
+---
+packages:
+  - 'postgresql-15'
+  - 'postgresql-contrib'

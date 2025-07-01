@@ -1,0 +1,8 @@
+---
+ansible_packages:
+  - 'software-properties-common'
+  - 'git'
+
+ansible_repo_packages:
+  - 'wget'
+  - 'gnupg'

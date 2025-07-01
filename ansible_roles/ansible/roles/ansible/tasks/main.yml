@@ -1,0 +1,36 @@
+---
+- name: debian variables
+  include_vars: "{{ role_path }}/vars/debian.yml"
+  when: ansible_os_family == "Debian"
+
+- name: debian tasks
+  include_tasks: "{{ role_path }}/tasks/debian.yml"
+  when: ansible_os_family == "Debian"
+
+- name: find ansible dirs
+  find:
+    paths: "{{ ansible_dir }}"
+    file_type: directory
+  register: found_ansible_dirs
+
+- name: set proper permissions on all directories
+  file:
+    path: "{{ item.path }}"
+    mode: '0700'
+  loop: "{{ found_ansible_dirs.files }}"
+
+- name: find ansible files
+  find:
+    paths: "{{ ansible_dir }}"
+    file_type: file
+  register: found_ansible_files
+
+- name: set proper permissions on all files
+  file:
+    path: "{{ item.path }}"
+    mode: '0400'
+  loop: "{{ found_ansible_files.files }}"
+
+- name: install galaxy collections
+  command:  ansible-galaxy collection install {{ item }}
+  loop: "{{ galaxy_collections }}"

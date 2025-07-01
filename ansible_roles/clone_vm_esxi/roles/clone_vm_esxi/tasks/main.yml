@@ -1,0 +1,29 @@
+---
+- name: create dir for target VM
+  ansible.builtin.shell: mkdir /vmfs/volumes/"{{ datastore_path }}"/"{{ target_name }}"
+
+- name: clone VMDK of clone VM to target VM dir
+  ansible.builtin.shell: vmkfstools -i /vmfs/volumes/"{{ datastore_path }}"/"{{ clone_name }}"/"{{ clone_name }}".vmdk /vmfs/volumes/"{{ datastore_path }}"/"{{ target_name }}"/"{{ target_name }}".vmdk -d thin
+
+- name: copy VMX file of clone VM to target VM dir
+  ansible.builtin.shell: cp /vmfs/volumes/"{{ datastore_path }}"/"{{ clone_name }}"/"{{ clone_name }}".vmx /vmfs/volumes/"{{ datastore_path }}"/"{{ target_name }}"/"{{ target_name }}".vmx
+
+- name: replace clone VM name in VMX file within target VM name
+  ansible.builtin.replace:
+    path: /vmfs/volumes/{{ datastore_path }}/{{ target_name }}/{{ target_name }}.vmx
+    regexp: "{{ clone_name }}"
+    replace: "{{ target_name }}"
+
+- name: register VM
+  community.vmware.vmware_guest_register_operation:
+    hostname: "{{ esxi_ip }}"
+    username: "{{ esxi_user }}"
+    password: "{{ esxi_passwd }}"
+    esxi_hostname: "{{ esxi_hostname }}"
+    validate_certs: false
+    name: "{{ target_name }}"
+    path: "[{{ datastore_path }}] {{ target_name }}/{{ target_name }}.vmx"
+    folder: "/ha-datacenter/vm"
+    datacenter: "ha-datacenter"
+    state: present
+  delegate_to: localhost

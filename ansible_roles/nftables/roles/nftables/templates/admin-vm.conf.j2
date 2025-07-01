@@ -1,0 +1,30 @@
+#!/usr/sbin/nft -f
+
+
+flush ruleset
+
+
+# private_ips
+define admin_vm = { 192.168.100.2 }
+
+# known_lan
+define db_vm = { 192.168.100.3 }
+define web_vm = { 192.168.100.4 }
+
+
+table ip global {
+    chain inbound {
+        type filter hook input priority 0; policy drop;
+
+        ct state vmap { established : accept, related : accept, invalid : drop }
+
+        ip protocol icmp ip saddr $admin_vm ip daddr $web_vm accept comment "allow ICMP to web-vm"
+        ip saddr $web_vm ip daddr $admin_vm counter tcp sport { 22, 80 } accept comment "allow SSH / HTTP to web-vm"
+        ip saddr $db_vm ip daddr $admin_vm counter tcp sport { 22 } accept comment "allow SSH to db-vm"
+
+        {% if enable_logging %}
+        log prefix "DROP INPUT - " flags all level warn
+        counter drop comment "DROP ALL"
+        {% endif %}
+    }
+}

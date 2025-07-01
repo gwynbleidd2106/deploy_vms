@@ -1,0 +1,123 @@
+---
+- name: clone the VM
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    vmid: "{{ clone_vmid }}"
+    name: "{{ target_name }}"
+    clone: "{{ target_vmid }}"
+    newid: "{{ target_vmid }}"
+    state: present
+  register: vm_clone_succeeded
+  changed_when: false
+  delegate_to: localhost
+
+- name: wait for VM to be registered in system
+  pause:
+    seconds: 5
+  when: '"already exists" not in vm_clone_succeeded.msg'
+
+- name: retrieve VM data
+  community.general.proxmox_vm_info:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    type: qemu
+    name: "{{ target_name }}"
+    config: current
+  delegate_to: localhost
+  register: vm_info
+  changed_when: false
+  ignore_errors: true
+
+- name: update VM specs
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    name: "{{ target_name }}"
+    cores: "{{ vm_cores }}"
+    memory: "{{ vm_ram }}"
+    update: true
+  delegate_to: localhost
+  when: >
+    vm_cores is defined and
+    vm_ram is defined and
+    vm_info is defined and
+    vm_info.proxmox_vms is defined and
+    vm_info.proxmox_vms | length > 0 and (
+      (vm_info.proxmox_vms[0].config.cores | default(-1)) != vm_cores and
+      (vm_info.proxmox_vms[0].config.memory | default(-1)) != vm_ram
+    )
+
+- name: configure startup
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    name: "{{ target_name }}"
+    onboot: "{{ vm_startup_enabled  }}"
+    startup: "{{ vm_startup_order }}"
+    update: true
+  delegate_to: localhost
+  when: >
+    vm_startup_enabled is defined and
+    vm_startup_order is defined and
+    vm_info is defined and
+    vm_info.proxmox_vms is defined and
+    vm_info.proxmox_vms | length > 0 and (
+      (vm_info.proxmox_vms[0].config.onboot | default('')) != vm_startup_enabled and
+      (vm_info.proxmox_vms[0].config.startup | default('')) != vm_startup_order
+    )
+
+- name: add extra disk
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    name: "{{ target_name }}"
+    virtio:
+      virtio1: "{{ vm_extra_disk }}"
+    update: true
+    update_unsafe: true
+  delegate_to: localhost
+  when: >
+    vm_extra_disk is defined and
+    "virtio1" not in vm_info.proxmox_vms[0].config
+
+- name: start cloned VM
+  community.general.proxmox_kvm:
+    api_user: "{{ pve_user }}"
+    api_password: "{{ pve_password }}"
+    api_host: "{{ pve_host }}"
+    node: "{{ pve_host }}"
+    name: "{{ target_name }}"
+    state: started
+  delegate_to: localhost
+  register: vm_state
+
+- name: wait for cloned VM to up
+  wait_for:
+    host: "{{ clone_name }}"
+    port: 22
+    delay: 5
+    timeout: 60
+  delegate_to: localhost
+  register: clone_vm_powered_on
+  changed_when: false
+  when: vm_state.status != 'running'
+
+- name: add cloned VM to inventory and expose vars
+  add_host:
+    name: "{{ clone_name }}"
+    clone_name: "{{ clone_name }}"
+    target_name: "{{ target_name }}"
+    groups: cloned_vm
+  when: clone_vm_powered_on is success
+  changed_when: false

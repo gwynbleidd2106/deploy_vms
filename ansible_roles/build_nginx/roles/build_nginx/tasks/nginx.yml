@@ -1,0 +1,168 @@
+---
+- name: check if nginx is compiled with required modules
+  command: nginx -V
+  register: nginx_build_params
+  changed_when: false
+  ignore_errors: true
+
+- name: build nginx if not already
+  block:
+    - name: install nginx
+      ansible.builtin.apt:
+        update_cache: true
+        name: nginx
+        state: present
+
+    - name: install packages for build nginx
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item.name }}"
+        state: present
+      loop: "{{ nginx_build_packages }}"
+
+    - name: install dev packages for build nginx modules
+      ansible.builtin.apt:
+        update_cache: true
+        name: "{{ item.name }}"
+        state: present
+      loop: "{{ dev_packages }}"
+
+    - name: clone repos from git with nginx custom modules
+      ansible.builtin.git:
+        repo: "{{ item.repo }}"
+        dest: /tmp/{{ item.dir }}
+      loop: "{{ nginx_modules }}"
+      become: false
+
+    - name: download and unarchive nginx into temporary location
+      unarchive:
+        src: "https://nginx.org/download/{{ nginx_version }}.tar.gz"
+        dest: /tmp
+        remote_src: true
+        mode: 0755
+      become: false
+
+    - name: configure, make module and nginx
+      shell: |
+        ./configure {{ nginx_configure_params }} && \
+        make modules && \
+        make
+      args:
+        chdir: "/tmp/{{ nginx_version }}"
+      become: false
+
+    - name: install nginx
+      shell: |
+        make install
+      args:
+        chdir: "/tmp/{{ nginx_version }}"
+  when: nginx_configure_params not in nginx_build_params.stderr
+
+- name: generate DH 2048 file
+  command: openssl dhparam -out {{ dh_param_file }} 2048
+  args:
+    creates: "{{ dh_param_file }}"
+
+- name: copy the nginx config file
+  template:
+    src: nginx.conf.j2
+    dest: /etc/nginx/nginx.conf
+    mode: 0644
+  notify: restart nginx
+
+- name: copy the nginx site file
+  template:
+    src: "{{ site_name }}.conf.j2"
+    dest: "/etc/nginx/sites-available/{{ site_name }}.conf"
+    mode: 0644
+  when: site_name is defined
+
+- name: symlink site
+  file:
+    src: "/etc/nginx/sites-available/{{ site_name }}.conf"
+    dest: "/etc/nginx/sites-enabled/{{ site_name }}.conf"
+    state: link
+  notify: restart nginx
+  when: site_name is defined
+
+- name: create modules config dir
+  file:
+    path: /usr/share/nginx/modules-available
+    state: directory
+    mode: '0755'
+
+- name: create modules config files
+  copy:
+    dest: "/usr/share/nginx/modules-available/{{ item.filename }}"
+    content: "{{ item.content }}"
+    mode: 0644
+  loop: "{{ nginx_modules_config }}"
+
+- name: symlink modules
+  file:
+    src: "/usr/share/nginx/modules-available/{{ item.filename }}"
+    dest: "/etc/nginx/modules-enabled/{{ item.filename }}"
+    state: link
+  loop: "{{ nginx_modules_config }}"
+  notify: restart nginx
+
+- name: find .old modules 
+  find:
+    paths: /usr/lib/nginx/modules/
+    patterns: "*.so.old"
+    recurse: no
+  register: old_modules
+
+- name: remove found .old files
+  file:
+    path: "{{ item.path }}"
+    state: absent
+  loop: "{{ old_modules.files }}"
+  when: old_modules.matched > 0
+
+- name: ensure nginx is running and enabled at boot
+  service:
+    name: nginx
+    enabled: true
+
+- name: remove Maxmind geoip2 dev package
+  apt:
+    name: "{{ geoip2_dev_package }}"
+    state: absent
+
+- name: remove packages for build nginx
+  ansible.builtin.apt:
+    name: "{{ item.name }}"
+    state: absent
+  loop: "{{ nginx_build_packages }}"
+
+- name: remove dev packages for build nginx modules
+  ansible.builtin.apt:
+    autoremove: true
+    autoclean: true
+    clean: true
+    name: "{{ item.name }}"
+    state: absent
+  loop: "{{ dev_packages }}"
+
+- name: remove files / dirs in /tmp
+  shell: |
+    rm -rf /tmp/*
+  args:
+    executable: /bin/bash
+
+- name: install packages for nginx modules to work
+  ansible.builtin.apt:
+    update_cache: true
+    name: "{{ item.name }}"
+    state: present
+  loop: "{{ module_packages }}"
+  notify: restart nginx
+  when: module_packages is defined
+
+- name: install Maxmind geoip2 package for nginx module to work
+  apt:
+    update_cache: true
+    name: "{{ geoip2_module_package }}"
+    state: present
+  notify: restart nginx

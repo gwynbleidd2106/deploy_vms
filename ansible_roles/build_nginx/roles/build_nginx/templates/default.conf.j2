@@ -1,0 +1,33 @@
+server {
+	listen 80 default_server;
+	root /var/www/html;
+	index index.html index.htm index.nginx-debian.html;
+	server_name test;
+
+	# geoip2 + vts modules
+	vhost_traffic_status_filter_by_set_key $geoip2_data_country_iso_code country::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_continent_code continent::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_city_name city::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_postal_code postal::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_latitude latitude::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_longitude longtitude::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_state_name state_name::$server_name;
+	vhost_traffic_status_filter_by_set_key $geoip2_data_state_code state_code::$server_name;
+	vhost_traffic_status_filter_by_set_key $filter_user_agent agent::$server_name;
+
+	location / {
+		if ($block) {
+			return 403;
+		}
+		try_files $uri $uri/ =404;
+	}
+
+	# geoip2 + vts modules
+	location /geo {
+		vhost_traffic_status_display;
+		vhost_traffic_status_display_format html;
+		# allow access to trusted network
+		allow {{ trusted_network }};
+		deny all;
+	}
+}

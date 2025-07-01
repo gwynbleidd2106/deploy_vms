@@ -1,0 +1,21 @@
+all:
+  children:
+    db:
+      hosts:
+        db-vm: {}
+      # vars:
+      #   timezone: "Asia/Bishkek"
+
+    web:
+      hosts:
+        web-vm: {}
+      # vars:
+      #   timezone: "Asia/Bishkek"
+
+    all:
+      hosts:
+        admin-vm: {}
+        db-vm: {}
+        web-vm: {}
+      # vars:
+      #   timezone: "Asia/Bishkek"

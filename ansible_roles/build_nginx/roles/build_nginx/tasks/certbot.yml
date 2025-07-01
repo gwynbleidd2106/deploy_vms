@@ -1,0 +1,26 @@
+---
+- name: install cloudflare package
+  apt:
+    update_cache: true
+    name: "{{ certbot_package }}"
+    state: present
+
+- name: copy the cloudflare token file
+  template:
+    src: ".cloudflaretoken.ini.j2"
+    dest: "{{ cloudflare_token_path }}"
+    mode: 0400
+
+- name: request certificate using DNS-01 challenge
+  command: >
+    certbot certonly
+    --dns-cloudflare
+    --dns-cloudflare-credentials {{ cloudflare_token_path }}
+    --dns-cloudflare-propagation-seconds 30
+    --non-interactive
+    --agree-tos
+    --email {{ certbot_email }}
+    -d {{ site_name }}
+  register: certbot_result
+  changed_when: "'Congratulations' in certbot_result.stdout"
+  notify: reload nginx

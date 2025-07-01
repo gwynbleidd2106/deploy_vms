@@ -1,0 +1,6 @@
+---
+ansible_repo_ubuntu_codename: jammy
+ansible_repo: "deb [signed-by=/usr/share/keyrings/ansible-archive-keyring.gpg] http://ppa.launchpad.net/ansible/ansible/ubuntu {{ ansible_repo_ubuntu_codename }} main"
+ansible_dir: '/etc/ansible'
+galaxy_collections:
+  - community.postgresql

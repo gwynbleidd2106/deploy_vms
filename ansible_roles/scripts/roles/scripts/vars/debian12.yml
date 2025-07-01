@@ -1,0 +1,3 @@
+---
+packages:
+  - 'netcat-openbsd'

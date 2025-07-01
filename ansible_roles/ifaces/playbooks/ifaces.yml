@@ -1,0 +1,11 @@
+---
+- name: network interfaces
+  hosts: admin-vm
+  become: true
+
+  vars:
+    target_name: 'admin-vm'
+    lan_iface_name: 'ens18'
+
+  roles:
+    - ifaces

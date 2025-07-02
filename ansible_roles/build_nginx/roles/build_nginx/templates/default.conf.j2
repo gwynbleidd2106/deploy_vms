@@ -2,7 +2,7 @@ server {
 	listen 80 default_server;
 	root /var/www/html;
 	index index.html index.htm index.nginx-debian.html;
-	server_name test;
+	server_name {{ site_name }};
 
 	# geoip2 + vts modules
 	vhost_traffic_status_filter_by_set_key $geoip2_data_country_iso_code country::$server_name;

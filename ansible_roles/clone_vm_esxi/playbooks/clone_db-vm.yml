@@ -42,6 +42,7 @@
 
   vars:
     target_name: 'db-vm'
+    ip_address: '192.168.100.3'
     lan_iface_name: 'ens18'
 
   roles:

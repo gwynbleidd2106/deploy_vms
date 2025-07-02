@@ -5,6 +5,12 @@
   changed_when: false
   ignore_errors: true
 
+- name: install dependency to work with https
+  apt:
+    update_cache: true
+    name: ca-certificates
+    state: present
+
 - name: determine latest Maxmind geoip2 GitHub release (local)
   delegate_to: localhost
   become: false

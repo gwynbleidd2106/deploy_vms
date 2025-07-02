@@ -5,8 +5,8 @@
 
   vars:
     nginx_version: 'nginx-1.28.0'
-    site_name: "test"
-    trusted_network: "192.168.100.2"
+    site_name: 'default'
+    trusted_network: '192.168.100.2'
     enroll_cert: false
     certbot_email: 'PASS_AS_ENV_OR_VAR'
     maxmind_account_id: 'PASS_AS_ENV_OR_VAR'

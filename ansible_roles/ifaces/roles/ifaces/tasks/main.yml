@@ -10,5 +10,4 @@
     name: "{{ clone_name }}"
     ansible_host: "{{ ip_address }}"
     groups: cloned_vm
-  when: clone_vm_powered_on is success
   changed_when: false
